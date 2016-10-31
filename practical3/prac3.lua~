@@ -1,0 +1,73 @@
+---------------------------------------------------------------------------------------
+-- Practical 3 - Learning to use different optimizers with logistic regression
+---------------------------------------------------------------------------------------
+
+require 'torch'
+require 'math'
+require 'nn'
+require 'optim'
+require 'gnuplot'
+require 'dataset-mnist'
+
+------------------------------------------------------------------------------
+-- INITIALIZATION AND DATA
+------------------------------------------------------------------------------
+
+torch.manualSeed(1)    -- fix random seed so program runs the same every time
+
+-- NOTE: see below for optimState, storing optimiser settings
+local opt = {}         -- these options are used throughout
+opt.optimization = 'lbfgs'
+opt.batch_size = 500
+opt.train_size = 40000  -- set to 0 or 60000 to use all 60000 training data
+local epochs = 10        -- number of full passes over all the training data
+opt.test_size = 0      -- 0 means load all data
+
+local optimState
+local optimMethod
+if opt.optimization == 'lbfgs' then
+  optimState = {
+    learningRate = 1e-1,
+    maxIter = 2,
+    nCorrection = 10
+  }
+  optimMethod = optim.lbfgs
+elseif opt.optimization == 'sgd' then
+  optimState = {
+    learningRate = 1e-1,
+    weightDecay = 0,
+    momentum = 0,
+    learningRateDecay = 1e-7
+  }
+  optimMethod = optim.sgd
+elseif opt.optimization == 'adagrad' then
+  optimState = {
+    learningRate = 1e-1,
+  }
+  optimMethod = optim.adagrad
+else
+  error('Unknown optimizer')
+end
+
+mnist.download()       -- download dataset if not already there
+
+-- load dataset using dataset-mnist.lua into tensors (first dim of data/labels ranges over data)
+local function load_dataset(train_or_test, count)
+    -- load
+    local data
+    if train_or_test == 'train' then
+        data = mnist.loadTrainSet(count, {32, 32})
+    else
+        data = mnist.loadTestSet(count, {32, 32})
+    end
+
+    -- shuffle the dataset
+    local shuffled_indices = torch.randperm(data.data:size(1)):long()
+    -- creates a shuffled *copy*, with a new storage
+    data.data = data.data:index(1, shuffled_indices):squeeze()
+    data.labels = data.labels:index(1, shuffled_indices):squeeze()
+
+    -- UNCOMMENT to display a training example
+    -- for more, see torch gnuplot package documentation:
+    -- https://github.com/torch/gnuplot#plotting-package-manual-with-gnuplot
+    --gnuplot.imagesc(data.data[20])
