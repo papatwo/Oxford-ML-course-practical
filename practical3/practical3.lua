@@ -255,14 +255,16 @@ local logProbs = model:forward(test.data)
 local classProbabilities = torch.exp(logProbs)
 local _, classPredictions = torch.max(classProbabilities, 2)
 local classification_error = 0
-
+-- TODO: compute test classification error here for the second handin item]]
+--classification_error = criterion:forward(classPredictions, test.labels)
+classification_error=torch.eq(classPrediction, test.lables:long() --[[把test lable从byte tensor转成long tensor，同类型的变量做比较]]):float():mean() --mean不一定是int所以cast到float
+print(classification_error)
 --print(classPredictions) --这里得到的数字就是predict分类出来的class，1,2,3....10
 -- classPredictions holds predicted classes from 1-10
 
--- TODO: compute test classification error here for the second handin item]]
---classification_error = criterion:forward(classPredictions, test.labels)
+--或者是另一个办法，access到每一个label里面去比较
 for i=1,(#classPredictions)[1] do
-  if torch.eq(classPredictions[i], test.labels[i]) then
+  if torch.eq(classPredictions[i], test.labels[i][1]) then
 	classification_error = classification_error 
   else 
 	classification_error = classificaton_error+1
